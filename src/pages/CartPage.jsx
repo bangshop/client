@@ -7,7 +7,7 @@ import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
 import AddressModal from '../components/AddressModal';
 import {
   Box, Container, Heading, Text, Flex, Image, VStack,
-  IconButton, Button, Link, useToast, useDisclosure
+  IconButton, Button, Link, useToast, useDisclosure, Divider
 } from '@chakra-ui/react';
 import { AddIcon, MinusIcon, DeleteIcon } from '@chakra-ui/icons';
 
@@ -24,9 +24,9 @@ function CartPage() {
       return;
     }
     if (currentUser) {
-      onOpen(); // If user is logged in, open address modal
+      onOpen();
     } else {
-      signInWithGoogle() // If not, prompt to sign in
+      signInWithGoogle()
         .then(() => {
           toast({ title: "Signed in successfully! Please proceed to checkout again.", status: 'success', duration: 4000 });
         })
@@ -41,6 +41,7 @@ function CartPage() {
       items: cart,
       totalPrice,
       createdAt: serverTimestamp(),
+      status: 'Pending', // This line is added
       customerInfo: {
         uid: currentUser.uid,
         name: currentUser.displayName,
@@ -59,11 +60,9 @@ function CartPage() {
     }
   };
 
-  // The rest of the JSX is mostly the same, but the button logic changes
   return (
     <>
       <Container maxW="container.lg" py={8}>
-        {/* ... (The cart items display code is the same as before) ... */}
         <Heading as="h1" size="xl" mb={6}>Your Shopping Cart</Heading>
         {cart.length === 0 ? (
           <Box textAlign="center" p={10} borderWidth="1px" borderRadius="lg">
@@ -72,15 +71,40 @@ function CartPage() {
           </Box>
         ) : (
           <Flex direction={{ base: 'column', md: 'row' }} gap={8}>
-            <VStack flex="2" spacing={4} align="stretch">{/* ... (map over cart items here as before) ... */}</VStack>
+            {/* Cart Items */}
+            <VStack flex="2" spacing={4} align="stretch">
+              {cart.map(item => (
+                <Flex key={item.id} align="center" justify="space-between" p={4} borderWidth="1px" borderRadius="lg">
+                  <Image src={item.imageUrl} alt={item.name} boxSize="80px" objectFit="cover" borderRadius="md" />
+                  <Box flex="1" ml={4}>
+                    <Text fontWeight="bold">{item.name}</Text>
+                    <Text fontSize="sm">₹{item.price.toFixed(2)}</Text>
+                  </Box>
+                  <Flex align="center">
+                    <IconButton size="sm" icon={<MinusIcon />} onClick={() => decreaseQuantity(item.id)} />
+                    <Text mx={3} fontWeight="bold">{item.quantity}</Text>
+                    <IconButton size="sm" icon={<AddIcon />} onClick={() => increaseQuantity(item)} />
+                  </Flex>
+                  <IconButton ml={4} variant="ghost" colorScheme="red" icon={<DeleteIcon />} onClick={() => removeFromCart(item.id)} />
+                </Flex>
+              ))}
+            </VStack>
+
+            {/* Order Summary */}
             <Box flex="1" p={6} borderWidth="1px" borderRadius="lg" h="fit-content">
               <Heading as="h2" size="lg" mb={4}>Order Summary</Heading>
-              <Flex justify="space-between" my={4}><Text fontSize="lg">Subtotal</Text><Text fontSize="lg">₹{totalPrice.toFixed(2)}</Text></Flex>
-              {/* THIS BUTTON IS THE MAIN CHANGE */}
+              <Divider />
+              <Flex justify="space-between" my={4}>
+                <Text fontSize="lg">Subtotal</Text>
+                <Text fontSize="lg">₹{totalPrice.toFixed(2)}</Text>
+              </Flex>
+              <Text fontSize="sm" color="gray.500" mb={4}>Shipping and taxes calculated at checkout.</Text>
               <Button colorScheme="teal" size="lg" w="100%" onClick={handleCheckout}>
                 {currentUser ? 'Proceed to Checkout' : 'Sign In & Checkout'}
               </Button>
-              <Link as={RouterLink} to="/" color="teal.500" display="block" textAlign="center" mt={4}>or Continue Shopping</Link>
+              <Link as={RouterLink} to="/" color="teal.500" display="block" textAlign="center" mt={4}>
+                or Continue Shopping
+              </Link>
             </Box>
           </Flex>
         )}
