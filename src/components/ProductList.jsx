@@ -9,7 +9,8 @@ import {
     Heading,
     Stack,
     useToast,
-    Skeleton
+    Skeleton,
+    Badge // Import Badge for the "Out of Stock" label
 } from '@chakra-ui/react';
 
 // ProductList now receives products and loading state as props
@@ -57,41 +58,63 @@ function ProductList({ products, loading }) {
     // Display the grid of products
     return (
         <SimpleGrid columns={{ base: 2, md: 3, lg: 4 }} spacing={6}>
-            {products.map(product => (
-                <Box
-                    key={product.id}
-                    borderWidth="1px"
-                    borderRadius="lg"
-                    overflow="hidden"
-                    boxShadow="md"
-                    transition="all 0.2s"
-                    _hover={{ transform: 'translateY(-5px)', boxShadow: 'lg' }}
-                >
-                    <Image src={product.imageUrl} alt={product.name} objectFit="cover" h="150px" w="100%" />
+            {products.map(product => {
+                // THIS IS THE NEW INVENTORY LOGIC
+                const isOutOfStock = !product.stock_quantity || product.stock_quantity <= 0;
 
-                    <Box p={4}>
-                        <Stack spacing={1}>
-                            <Heading as="h3" size="md" noOfLines={1}>
-                                {product.name}
-                            </Heading>
-                            <Text fontSize="sm" color="gray.600" noOfLines={2}>
-                                {product.description}
-                            </Text>
-                            <Text fontWeight="bold" fontSize="lg" color="teal.500">
-                                ₹{product.price.toFixed(2)}
-                            </Text>
-                        </Stack>
-                        <Button
-                            mt={4}
-                            colorScheme="teal"
-                            w="100%"
-                            onClick={() => handleAddToCart(product)}
-                        >
-                            Add to Cart
-                        </Button>
+                return (
+                    <Box
+                        key={product.id}
+                        borderWidth="1px"
+                        borderRadius="lg"
+                        overflow="hidden"
+                        boxShadow="md"
+                        transition="all 0.2s"
+                        _hover={{ transform: 'translateY(-5px)', boxShadow: 'lg' }}
+                        position="relative" // Needed for the badge positioning
+                        opacity={isOutOfStock ? 0.6 : 1} // Fade out the card if out of stock
+                    >
+                        {/* THE "OUT OF STOCK" BADGE */}
+                        {isOutOfStock && (
+                            <Badge 
+                                position="absolute" 
+                                top="2" 
+                                left="2" 
+                                colorScheme="red"
+                                fontSize="0.7em"
+                            >
+                                OUT OF STOCK
+                            </Badge>
+                        )}
+
+                        <Image src={product.imageUrl} alt={product.name} objectFit="cover" h="150px" w="100%" />
+
+                        <Box p={4}>
+                            <Stack spacing={1}>
+                                <Heading as="h3" size="md" noOfLines={1}>
+                                    {product.name}
+                                </Heading>
+                                <Text fontSize="sm" color="gray.600" noOfLines={2}>
+                                    {product.description}
+                                </Text>
+                                <Text fontWeight="bold" fontSize="lg" color="teal.500">
+                                    ₹{product.price.toFixed(2)}
+                                </Text>
+                            </Stack>
+                            <Button
+                                mt={4}
+                                colorScheme="teal"
+                                w="100%"
+                                onClick={() => handleAddToCart(product)}
+                                // DISABLE THE BUTTON IF OUT OF STOCK
+                                isDisabled={isOutOfStock}
+                            >
+                                {isOutOfStock ? 'Out of Stock' : 'Add to Cart'}
+                            </Button>
+                        </Box>
                     </Box>
-                </Box>
-            ))}
+                )
+            })}
         </SimpleGrid>
     );
 }
